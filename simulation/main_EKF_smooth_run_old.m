@@ -156,7 +156,6 @@ T_s.min = min(pos_diff_s);
 
 % T_s
 [T.avg T.std T.max T.min T.Distxy T.Distxyz]
-%%
 
 
 
