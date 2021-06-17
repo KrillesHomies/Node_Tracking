@@ -147,14 +147,6 @@ T.min = min(pos_diff);
 T.Distxy = norm(Dataset{10}.X_r(1:2,t_half));
 T.Distxyz = norm(Dataset{10}.X_r(1:3,t_half));
 
-T_s = [];
-T_s.avg = mean(pos_diff_s);
-T_s.std = std(pos_diff_s);
-T_s.max = max(pos_diff_s);
-T_s.min = min(pos_diff_s);
-
-
-% T_s
 [T.avg T.std T.max T.min T.Distxy T.Distxyz]
 
 

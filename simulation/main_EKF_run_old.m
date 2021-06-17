@@ -1,10 +1,10 @@
-% use gravity vector?
+
 close all
 addpath EKF
 addpath simulation_data
 load('Data_set40.mat')
 EKF_settings = get_sim_noise_settings();
-% Get Settings 
+%% Get Settings 
 I = eye(3); 
 X_initial = [0 0 0 ... % Initial Position
                  0 0 0 ... % Initial Velocity
@@ -116,15 +116,6 @@ T.min = min(pos_diff);
 T.Distxy = norm(Dataset{j}.X_r(1:2,t_half));
 T.Distxyz = norm(Dataset{j}.X_r(1:3,t_half));
 
-T_s = [];
-T_s.avg = mean(pos_diff_s);
-T_s.std = std(pos_diff_s);
-T_s.max = max(pos_diff_s);
-T_s.min = min(pos_diff_s);
-
-
-% T_s
-%[T_s.avg T_s.std T_s.max T_s.min T.Distxy T.Distxyz]
 [T.avg T.std T.max T.min T.Distxy T.Distxyz]
 
 
