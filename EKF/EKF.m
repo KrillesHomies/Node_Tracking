@@ -130,129 +130,38 @@ for k=2:steps
         if(ZUPT.MEAS.ZUPT(ZUPT.MEAS.COUNT))
             H_zupt = [zeros(3,3) eye(3) zeros(3,9)];
             Measured = [Measured; zeros(3,1)];
-            %R = [R; EKF_settings.sigma_zero_velocity.^2.*ones(3,1)];
             R = blkdiag(R, diag(EKF_settings.sigma_zero_velocity.^2.*ones(3,1)));
             Predicted = [Predicted; H_zupt*X];
             H = [H; H_zupt];
         end
     end
     
-    
-    %[MAG.MEAS.COUNT MAG.MEAS.NEW_VALUES] = get_next_meas(T,MAG.MEAS.t,MAG.MEAS.COUNT);
-    %window_size = 11;
-%     % MAG.MEAS.NEW_VALUES && GRAVITY.MEAS.NEW_VALUES &&  && latest_pressure > 100
-%     if(k > window_size && steps > k+window_size && ~isempty(Data.IMU.mag) && latest_pressure > 100)
-% 
-%         accel_data = Data.IMU.acc(:,k-floor(window_size/2):k+ceil(window_size/2)-1,:);
-%         mag_data = Data.IMU.mag(:,k-floor(window_size/2):k+ceil(window_size/2)-1,:);
-%         V1 = [EKF_settings.g'/norm(EKF_settings.g).*ones(3,window_size)...
-%               EKF_settings.MagneticField'/norm(EKF_settings.MagneticField').*ones(3,window_size)];
-%         V2 = [accel_data ...
-%               mag_data];
-%         V2 = V2./sqrt(sum(V2.^2));
-%         ROT = V2*V1';
-%         [U S V] = svd(ROT);
-%         corrections = flip(rotm2eul(V*U'));  
-%         H_mag_roll_pitch = [zeros(2,6) eye(2) zeros(2,7)];
-%         H_mag_yaw = [zeros(1,8) eye(1) zeros(1,6)];
-%         v = (corrections-X(7:9)');
-%         xchi_rp = (H_mag_roll_pitch*P*H_mag_roll_pitch'+diag(EKF_settings.sigma_mag.^2.*ones(2,1)));
-%         xchi_y = (H_mag_yaw*P*H_mag_yaw'+diag(EKF_settings.sigma_mag.^2.*ones(1,1)));
-%         g_mag_test = abs(1-mean(sqrt(sum(accel_data.^2)))/norm(EKF_settings.g'));
-%         if(g_mag_test < 0.05)
-%             if(v(1:2)*xchi_rp*v(1:2)' < 10e-5) %10e-5
-%                 Measured = [Measured; X(7:8)];
-%                 Predicted = [Predicted; corrections(1:2)'];
-%                 R = blkdiag(R, diag(EKF_settings.sigma_mag.^2.*ones(2,1)));
-%                 H = [H; H_mag_roll_pitch];
-%             end
-%             if( v(3)*xchi_y*v(3)' < 10e-5) %10e-5 0.58
-%                 Measured = [Measured; X(9)];
-%                 Predicted = [Predicted; corrections(3)];
-%                 R = blkdiag(R, diag(EKF_settings.sigma_mag.^2.*ones(1,1)));
-%                 H = [H; H_mag_yaw];
-%             end
-%         end
-%     end 
   
     [COMPASS.MEAS.COUNT COMPASS.MEAS.NEW_VALUES] = get_next_meas(T,COMPASS.MEAS.t,COMPASS.MEAS.COUNT);
     if(COMPASS.MEAS.NEW_VALUES && latest_pressure > EKF_settings.compass_pressure_cutoff)
         R_N2B = q2dcm(quat)';
         H_mag = [zeros(3,6) eye(3) zeros(3,6)];
-        %H_mag = [zeros(3,6) skew(R_N2B*EKF_settings.MagneticField') zeros(3,6)];
         xchi = (H_mag*P*H_mag'+diag(EKF_settings.sigma_mag.^2.*ones(3,1)));
         v = (COMPASS.MEAS.Data(:,COMPASS.MEAS.COUNT)) - X(7:9);
-%         v1 = dcm2q(Rt2b(dcm2euler(quat2rotm(COMPASS.MEAS.Data(COMPASS.MEAS.COUNT,:))))');
-%         v2 = dcm2q(Rt2b(X(7:9))');
-%         v = dcm2euler(q2dcm(quatmultiply(conj(v1'),v2'))')';
         if(v'*xchi*v < EKF_settings.compass_cutoff) % 90%
             Measured = [Measured; (COMPASS.MEAS.Data(:,COMPASS.MEAS.COUNT))];
             Predicted = [Predicted; X(7:9)];
             R = blkdiag(R, diag(EKF_settings.sigma_mag.*ones(3,1)));
             H = [H; H_mag];
         end
-%         H_mag_roll_pitch = [zeros(2,6) eye(2) zeros(2,7)];
-%         H_mag_yaw = [zeros(1,8) eye(1) zeros(1,6)];
-%         xchi_rp = (H_mag_roll_pitch*P*H_mag_roll_pitch'+diag(EKF_settings.sigma_mag.^2.*ones(2,1)));
-%         xchi_y = (H_mag_yaw*P*H_mag_yaw'+diag(EKF_settings.sigma_mag.^2.*ones(1,1)));        
-%         if(v(1:2)'*xchi_rp*v(1:2) < 0.001) %10e-5
-%             Measured = [Measured; (COMPASS.MEAS.Data(1:2,COMPASS.MEAS.COUNT))];
-%             Predicted = [Predicted; X(7:8)];
-%             R = blkdiag(R, diag(EKF_settings.sigma_mag.^2.*ones(2,1)));
-%             H = [H; H_mag_roll_pitch];
-%         end
-%         if( v(3)'*xchi_y*v(3) < 0.001) %10e-5 0.58
-%             Measured = [Measured; (COMPASS.MEAS.Data(3,COMPASS.MEAS.COUNT))];
-%             Predicted = [Predicted; X(9)];
-%             R = blkdiag(R, diag(EKF_settings.sigma_mag.^2.*ones(1,1)));
-%             H = [H; H_mag_yaw];
-%         end
         
     end    
-%     [MAG.MEAS.COUNT MAG.MEAS.NEW_VALUES] = get_next_meas(T,MAG.MEAS.t,MAG.MEAS.COUNT);
-%     if(MAG.MEAS.NEW_VALUES)
-%         R_N2B = q2dcm(quat)';
-%         [~, St_1] = Lineariztion_MAG(dcm2euler(q2dcm(quat)), EKF_settings.MagneticField');
-%         H_mag = [zeros(3,6) St_1 zeros(3,6)];
-%         %H_mag = [zeros(3,6) skew(R_N2B*EKF_settings.MagneticField') zeros(3,6)];
-%         xchi = (H_mag*P*H_mag'+diag(EKF_settings.sigma_mag.^2.*ones(3,1)));
-%         v = (MAG.MEAS.MAG(:,MAG.MEAS.COUNT)-R_N2B*EKF_settings.MagneticField');
-%         %if(v'*xchi*v < 0.58) % 90%
-%             Measured = [Measured; MAG.MEAS.MAG(:,MAG.MEAS.COUNT) ];
-%             Predicted = [Predicted; R_N2B*EKF_settings.MagneticField'];
-%             R = blkdiag(R, diag(EKF_settings.sigma_mag.*ones(3,1)));
-%             H = [H; H_mag];
-%         %end
-%     end
-%     [GRAVITY.MEAS.COUNT GRAVITY.MEAS.NEW_VALUES] = get_next_meas(T,GRAVITY.MEAS.t,GRAVITY.MEAS.COUNT);
-%     if(GRAVITY.MEAS.NEW_VALUES)
-%         if(GRAVITY.MEAS.MAG(GRAVITY.MEAS.COUNT))
-%             R_N2B = q2dcm(quat)';
-%             [~, St_2] = Lineariztion_MAG(dcm2euler(q2dcm(quat)), EKF_settings.g');
-%             H_mag = [zeros(3,6) St_2 eye(3)*0 zeros(3,3)];
-%             xchi = (H_mag*P*H_mag'+diag(EKF_settings.sigma_acc.^2.*ones(3,1)));
-%             v = (u_h(1:3)-(R_N2B*(-EKF_settings.g')));
-%             if(v'*xchi*v < 0.58) % 90%
-%                 Measured = [Measured; u_h(1:3)];
-%                 Predicted = [Predicted; (R_N2B*(-EKF_settings.g'))];
-%                 R = blkdiag(R, diag(EKF_settings.sigma_acc.*ones(3,1)));
-%                  H = [H; H_mag];
-%             end
-%         end
-%     end
 
     if(~isempty(R))
         % Calculate the Kalman filter gain.
         K=(P*H')/(H*P*H'+(R));
-        % Update the perturbation state estimate.
+        % Calculate Update
         z=K*(Measured-Predicted);
-        % Correct the navigation states using current perturbation estimates.
+        % Correct the navigation states with adjustments
         X=X+z;
-        
-
+        % Correct orientation
         quat=Gamma(quat,z(7:9));
-        
-        X(7:9) = dcm2euler(q2dcm(quat)); %X(7:9) = rotm2eul(R_N2B,'XYZ');
+        X(7:9) = dcm2euler(q2dcm(quat)); 
 
         % Update the Kalman filter state covariance.
         P=(eye(15)-K*H)*P;
@@ -302,6 +211,9 @@ function q=Gamma(q,epsilon)
 
 return
 
+%%
+% Allocates space for each of the outputs
+%%
 function [outdata] = allocate_space(X,P,steps)
     % State - Predicted & Updated 
     outdata.X = zeros(15, steps);
@@ -324,14 +236,3 @@ function [outdata] = allocate_space(X,P,steps)
     outdata.P_predicted(:, :, 1) = P;
     outdata.diag_P(:, 1) = diag(P);
 return
-
-% function Hn=nummericalJacobian(R_N2B, Vector)
-% ori = rotm2eul(R_N2B,'XYZ');
-% h = 0.000001;
-% Hn=zeros(3);
-% for ii=1:3
-%     euler=ori;
-%     euler(ii)=euler(ii)+h;
-%     Hn(:,ii)=(eul2rotm(euler,'XYZ')'-R_N2B')*(Vector')./h;
-% end
-% return
