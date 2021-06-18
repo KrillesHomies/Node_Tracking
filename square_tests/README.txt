@@ -5,5 +5,7 @@
 % The trajectory using the EKF implementation is plotted to show the results,
 % Zero velocity update is present in each corner where the sensors stops for a few secounds
 %
-% Edited by Kristoffer Lindve 2021-06-08
+% This is very simple example dataset to test the filter
+%
+% Edited by Kristoffer Lindve 2021-06-18
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
