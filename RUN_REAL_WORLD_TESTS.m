@@ -1,15 +1,13 @@
 %% RUNS EKF on Collected Data
 close all; clear;
-addpath Forsok_1
-addpath Forsok_1\Processed_Data
-addpath Forsok_1\Cut_Data
+addpath(genpath('experiments'))
+addpath(genpath('Segmented_data'))
+addpath(genpath('EKF'))
 
-%load('2021-04-28_40m_1f_long')
-%load('2021-04-28_40m_2f_long') % has some problems with getting correct bias 
-%load('2021-04-28_40m_3f_long')
-%load('2021-04-28_40m_1f')
-load('2021-04-28_40m_2f')
-load('2021-04-28_40m_3f')
+load('SET1')
+%load('SET2') % has some problems with getting correct bias 
+%load('SET3')
+
 load('Mag_Calibration_Data.mat')
 
 %% Settings
@@ -97,13 +95,15 @@ biases = X(10:15);
 biases_p = diag(P(10:15,10:15));
 for o=1:10 %1:15
     
+    % Kalman filtering
     outdata= EKF(X_n, P_n,DataS,EKF_settings);
+    
+    % Smoothing
     soutdata = RTS2(outdata,EKF_settings);
-
+    
+    % Update Biases
     X_n = soutdata.X(:,1); 
     P_n = (((soutdata.P(:,:,1))));
-%         X_n = [X(1:6);  X_n(7:end,1)]; 
-%         P_n = blkdiag((P(1:6,1:6)), ((P_n(7:end,7:end))));
     X_n = [X(1:9);  X_n(10:end,1)]; 
     P_n = blkdiag((P(1:9,1:9)), ((P_n(10:end,10:end))));
     
@@ -141,7 +141,8 @@ pick = [Data.GNSS.pos(:,n+1)' Data.GNSS.accuracy(1,n+1) Data.GNSS.accuracy(:,n+1
 
 % plot_real_trajectory(soutdata,time_drop, drop, pick,'Smoothed Path Itterative Version', 1)
 plot_real_trajectory(soutdata,time_drop-50,Data, drop, pick,'Smoothed Path Iterative Version', 1)
-%
+
+%% Path Estimate
 figure(10);
 sgtitle('Position Result Dataset 1 - Iterative Bias Update')
 % Plot
@@ -149,8 +150,7 @@ subplot(3,1,1)
 plot(outdata.t,outdata.X(1,:))
 hold on 
 plot(Data.GNSS.t,Data.GNSS.pos(1,:),'.k')
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,1),'.g')
-% hold off 
+
 title('North')
 xlabel('time (s)')
 ylabel('pos (m)')
@@ -158,8 +158,7 @@ subplot(3,1,2)
 plot(outdata.t,outdata.X(2,:))
 hold on 
 plot(Data.GNSS.t,Data.GNSS.pos(2,:),'.k')
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,2),'.g')
-% hold off  
+
 title('East')
 xlabel('time (s)')
 ylabel('pos (m)')
@@ -178,8 +177,7 @@ subplot(3,1,1)
 plot(outdata_n.t,outdata_n.X(1,:))
 hold on 
 plot(Data.GNSS.t,Data.GNSS.pos(1,:),'.k')
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,1),'.g')
-% hold off 
+
 title('North')
 xlabel('time (s)')
 ylabel('pos (m)')
@@ -187,8 +185,7 @@ subplot(3,1,2)
 plot(outdata_n.t,outdata_n.X(2,:))
 hold on 
 plot(Data.GNSS.t,Data.GNSS.pos(2,:),'.k')
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,2),'.g')
-% hold off  
+
 title('East')
 xlabel('time (s)')
 ylabel('pos (m)')
@@ -200,8 +197,8 @@ title('Down')
 xlabel('time (s)')
 ylabel('pos (m)')
 
-
-%%
+ 
+%% Biases Improvment
 figure(12);
 sgtitle('Initial Accelerometer Bias Estimate - Set 1')
 % Plot
@@ -211,8 +208,6 @@ hold on
 plot(biases(1,:) + 3*sqrt(biases_p(1,:)), 'r');
 plot(biases(1,:) - 3*sqrt(biases_p(1,:)), 'r');
 hold off
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,1),'.g')
-% hold off 
 title('North')
 xlabel('Iteration')
 ylabel('Bias (m/s^2)')
@@ -221,9 +216,7 @@ plot(biases(2,:))
 hold on 
 plot(biases(2,:) + 3*sqrt(biases_p(2,:)), 'r');
 plot(biases(2,:) - 3*sqrt(biases_p(2,:)), 'r');
-hold off
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,2),'.g')
-% hold off  
+hold off  
 title('East')
 xlabel('Iteration')
 ylabel('Bias estimate (m/s^2)')
@@ -246,8 +239,6 @@ hold on
 plot(biases(4,:) + 3*sqrt(biases_p(4,:)), 'r');
 plot(biases(4,:) - 3*sqrt(biases_p(4,:)), 'r');
 hold off
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,1),'.g')
-% hold off 
 title('North')
 xlabel('Iteration')
 ylabel('Bias (rad/s)')
@@ -256,9 +247,7 @@ plot(biases(5,:))
 hold on 
 plot(biases(5,:) + 3*sqrt(biases_p(5,:)), 'r');
 plot(biases(5,:) - 3*sqrt(biases_p(5,:)), 'r');
-hold off
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,2),'.g')
-% hold off  
+hold off 
 title('East')
 xlabel('Iteration')
 ylabel('Bias estimate (rad/s)')
@@ -303,6 +292,7 @@ h(1) = plot(Data.COMPASS.t,Data.COMPASS.Data(3,:),'r');
 hold on 
 h(2) = plot(Data.COMPASS2.t,Data.COMPASS2.Data(3,:),'b');
 hold off
+legend(h,{'INS COMPASS','MAG COMPASS'})
 title('Yaw')
 xlabel('t(s)')
 ylabel('rad')

@@ -1,6 +1,6 @@
 %% RUNS EKF on Collected Data
 close all; clear;
-addpath(genpath('real_world_data'))
+addpath(genpath('experiments'))
 addpath(genpath('EKF'))
 
 % load('2021-04-28_40m_1f_long')
