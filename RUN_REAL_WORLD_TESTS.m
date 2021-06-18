@@ -83,16 +83,17 @@ settings.acc_bias_driving_noise=0.000001; % Acc bias change rate
 settings.gyro_bias_driving_noise=0.00001*pi/180; % Gyro bias change rate
 EKF_settings.compass_cutoff = 0.58; %error rejection for compass
 EKF_settings.compass_pressure_cutoff = 50; %Stop reading since boat will effect meas
-
+%% Prep variables
 X = X_initial;
 P = P_initial;
 X_n = X;
 P_n = P;
 DataS = Data;
 DataS.IMU.t = DataS.IMU.t(1:floor(length(Data.IMU.t)/3*2));
-%
+
 biases = X(10:15);
 biases_p = diag(P(10:15,10:15));
+%% Perform Iterative model
 for o=1:10 %1:15
     
     % Kalman filtering
@@ -107,7 +108,7 @@ for o=1:10 %1:15
     X_n = [X(1:9);  X_n(10:end,1)]; 
     P_n = blkdiag((P(1:9,1:9)), ((P_n(10:end,10:end))));
     
-    [outdata.X(1:3,end)' o]
+    Position_itt = [outdata.X(1:3,end)' o]
     figure(13);
     plot(outdata.X(10:12,:)')
     title('Acc Biases')
@@ -119,27 +120,36 @@ for o=1:10 %1:15
     biases_p(:,o+1) = diag(P_n(10:15,10:15)');
     
 end
-%%
+%% Get results
 
-% Data = DataS;
 outdata = EKF(X_n, P_n,Data,EKF_settings);
-%outdata = RTS2(outdata,EKF_settings);
 outdata_n = EKF(X, P,Data,EKF_settings);
 
 pos_estimate_n = outdata_n.X(1:3,floor(length(Data.IMU.t)/3*2))';
 pos_estimate_conf_n = sqrt(outdata_n.diag_P(1:3,floor(length(Data.IMU.t)/3*2)))';
-notsmoothed_position = [pos_estimate_n pos_estimate_conf_n]
+notsmoothed_position = [pos_estimate_n pos_estimate_conf_n];
 
 pos_estimate = outdata.X(1:3,floor(length(Data.IMU.t)/3*2))';
 pos_estimate_conf = sqrt(outdata.diag_P(1:3,floor(length(Data.IMU.t)/3*2)))';
-smoothed_position = [pos_estimate pos_estimate_conf]
+smoothed_position = [pos_estimate pos_estimate_conf];
 
-drop = [Data.GNSS.pos(:,n)' Data.GNSS.accuracy(1,n) Data.GNSS.accuracy(:,n)']
-pick = [Data.GNSS.pos(:,n+1)' Data.GNSS.accuracy(1,n+1) Data.GNSS.accuracy(:,n+1)']
+% Drop/pick up position
+drop = [Data.GNSS.pos(:,n)' Data.GNSS.accuracy(1,n) Data.GNSS.accuracy(:,n)'];
+pick = [Data.GNSS.pos(:,n+1)' Data.GNSS.accuracy(1,n+1) Data.GNSS.accuracy(:,n+1)'];
 
-[pos_estimate_n pos_estimate_conf_n;pos_estimate pos_estimate_conf; drop; pick]
+RESULTS = [pos_estimate_n pos_estimate_conf_n;pos_estimate pos_estimate_conf; drop; pick];
 
-% plot_real_trajectory(soutdata,time_drop, drop, pick,'Smoothed Path Itterative Version', 1)
+TYPE = ["EKF" "Iterative EKF" "Drop-off Position" "Pick up position"]';
+NORTH_POSITION = RESULTS(:,1);
+EAST_POSITION = RESULTS(:,2);
+DOWN_POSITION = RESULTS(:,3);
+NORTH_UNC_POSITION = RESULTS(:,4);
+EAST_UNC_POSITION = RESULTS(:,5);
+DOWN_UNC_POSITION = RESULTS(:,6);
+
+T = table(TYPE,NORTH_POSITION,EAST_POSITION,DOWN_POSITION,NORTH_UNC_POSITION,EAST_UNC_POSITION,DOWN_UNC_POSITION)
+
+
 plot_real_trajectory(soutdata,time_drop-50,Data, drop, pick,'Smoothed Path Iterative Version', 1)
 
 %% Path Estimate
@@ -272,8 +282,7 @@ h(1) = plot(Data.COMPASS.t,Data.COMPASS.Data(1,:),'r');
 hold on 
 h(2) = plot(Data.COMPASS2.t,Data.COMPASS2.Data(1,:),'b');
 hold off
-%plot(Data.NILUS.time(Data_N.NILUS.gps_state),Data.NILUS.position_raw_local(Data_N.NILUS.gps_state,1),'.g')
-% hold off 
+legend(h,{'INS COMPASS','MAG COMPASS'})
 title('Roll')
 xlabel('t(s)')
 ylabel('rad')
@@ -283,6 +292,7 @@ h(1) = plot(Data.COMPASS.t,Data.COMPASS.Data(2,:),'r');
 hold on 
 h(2) = plot(Data.COMPASS2.t,Data.COMPASS2.Data(2,:),'b');
 hold off
+legend(h,{'INS COMPASS','MAG COMPASS'})
 title('Pitch')
 xlabel('t(s)')
 ylabel('rad')
